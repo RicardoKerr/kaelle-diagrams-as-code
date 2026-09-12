@@ -1,0 +1,35 @@
+sequenceDiagram
+    actor P as Participante
+    participant W as Aplicação Web
+    participant D as Backend / PostgreSQL
+    participant L as LiveKit Cloud
+    participant A as Worker Persona Agent
+    participant O as OpenAI
+    participant G as Protocolo social
+    participant E as ElevenLabs
+
+    P->>W: Entra na sessão
+    W->>D: Consulta/cria sessão e configuração
+    W->>L: Solicita acesso à sala
+    W->>L: Dispatch explícito do agente
+    L->>A: Entrega job + metadados da persona
+    A->>L: Entra na sala
+
+    P->>L: Fala na reunião
+    L->>A: Áudio do participante
+    A->>O: STT
+    O-->>A: Texto transcrito
+    A->>G: Verifica palavra e autoridade
+
+    alt Agente autorizado a falar
+        A->>O: Processa persona + contexto
+        O-->>A: Resposta
+        A->>E: Sintetiza voz
+        E-->>A: Áudio incremental
+        A->>L: Publica áudio
+        L-->>P: Voz do agente
+    else Agente não autorizado
+        G-->>A: Aguarda ou usa fallback de chat
+    end
+
+    A->>D: Registra interação/transcrição
