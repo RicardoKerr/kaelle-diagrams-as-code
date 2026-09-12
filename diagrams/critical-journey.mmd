@@ -3,33 +3,47 @@ sequenceDiagram
     participant W as Aplicação Web
     participant D as Backend / PostgreSQL
     participant L as LiveKit Cloud
-    participant A as Worker Persona Agent
+    participant A as SocialAgent / Worker Python
+    participant C as Contexto / RAG
     participant O as OpenAI
-    participant G as Protocolo social
     participant E as ElevenLabs
 
     P->>W: Entra na sessão
-    W->>D: Consulta/cria sessão e configuração
+    W->>D: Consulta sessão e configuração
     W->>L: Solicita acesso à sala
     W->>L: Dispatch explícito do agente
     L->>A: Entrega job + metadados da persona
     A->>L: Entra na sala
 
     P->>L: Fala na reunião
-    L->>A: Áudio do participante
-    A->>O: STT
-    O-->>A: Texto transcrito
-    A->>G: Verifica palavra e autoridade
+    L->>A: Áudio / turno do participante
+    A->>C: Busca contexto da sala + briefing documental
+    C-->>A: Contexto recuperado
+    A->>A: Injeta contexto no turno
+    A->>A: Avalia silêncio, menção e destinatário
 
-    alt Agente autorizado a falar
-        A->>O: Processa persona + contexto
-        O-->>A: Resposta
-        A->>E: Sintetiza voz
-        E-->>A: Áudio incremental
-        A->>L: Publica áudio
-        L-->>P: Voz do agente
-    else Agente não autorizado
-        G-->>A: Aguarda ou usa fallback de chat
+    alt Pode solicitar a palavra
+        A->>O: Gera contribuição considerando persona + contexto
+        O-->>A: Rascunho da contribuição
+        A->>W: Solicita a palavra + rascunho
+        W-->>A: Decisão de governança
+
+        alt Palavra concedida
+            A->>O: Gera resposta final
+            O-->>A: Texto da resposta
+            A->>E: Sintetiza voz
+            E-->>A: Áudio
+            A->>L: Publica áudio
+            L-->>P: Voz do agente
+            A->>W: Libera a palavra / registra estado
+        else Palavra negada ou expirada
+            A->>W: Envia fallback para chat
+        end
+    else Não deve falar
+        A->>A: Interrompe resposta de voz
     end
 
-    A->>D: Registra interação/transcrição
+    A->>W: Registra transcrição/interação
+    W->>D: Persiste dados da sessão
+
+    Note over A,C: A implementação atual injeta contexto da sala e briefing documental antes da decisão social.
