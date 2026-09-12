@@ -1,0 +1,31 @@
+flowchart LR
+    U[Participante humano]
+    X[Agente ou sistema externo]
+
+    subgraph K[Kaelle]
+        WEB[Aplicação Web<br/>UI + server functions]
+        GOV[Protocolo social<br/>e governança]
+        DATA[(PostgreSQL<br/>Auth + Realtime + RLS)]
+        DISP[Dispatch de agentes]
+        WORKER[Worker Python<br/>Persona Agent]
+        INTEROP[MCP / A2A]
+    end
+
+    LK[LiveKit Cloud<br/>salas + SFU]
+    OAI[OpenAI<br/>STT + LLM]
+    ELEVEN[ElevenLabs<br/>TTS]
+    TAVUS[Tavus<br/>avatar opcional]
+
+    U --> WEB
+    WEB --> DATA
+    WEB --> GOV
+    WEB --> DISP
+    WEB <--> LK
+    DISP --> LK
+    LK <--> WORKER
+    WORKER --> OAI
+    WORKER --> ELEVEN
+    WORKER -. opcional .-> TAVUS
+    WORKER --> DATA
+    X <--> INTEROP
+    INTEROP <--> WEB
